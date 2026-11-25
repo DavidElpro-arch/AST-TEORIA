@@ -50,8 +50,16 @@ public class TSocketCanviEstats1 extends TSocketCanviEstats{
     public void inicia(){
         mon.lock();
         try{
-            throw new RuntimeException("Part a completar");
-
+            while(estat != ESTAT_TANC){
+            appCV.awaitUninterruptibly();
+            }
+            
+            estat = ESTAT_ENV_INICI;
+            xarxa.enviar(INICI);
+            while(estat != ESTAT_FINAL){
+            appCV.awaitUninterruptibly();
+                
+            }
 
             
             
@@ -67,11 +75,16 @@ public class TSocketCanviEstats1 extends TSocketCanviEstats{
     public void espera(){
         mon.lock();
         try{
-            throw new RuntimeException("Part a completar");
+            while(estat != ESTAT_TANC){
+            appCV.awaitUninterruptibly();
             
- 
+            }
+            estat = ESTAT_ESP;
             
+            while(estat != ESTAT_FINAL){
+            appCV.awaitUninterruptibly();
             
+            }
         
         } catch (Exception ex) { System.out.println(ex); }
         finally{
@@ -82,7 +95,43 @@ public class TSocketCanviEstats1 extends TSocketCanviEstats{
     public void processarMissatge(Object miss){
         mon.lock();
         try {
-            throw new RuntimeException("Part a completar");
+            switch(estat){
+                case ESTAT_ESP: {
+                    if(miss.equals(INICI)){
+                        xarxa.enviar(INICI_RECON);
+                        estat = ESTAT_REB_INICI;
+                        
+                    }
+                    break;
+                }
+                
+               case ESTAT_ENV_INICI: {
+                          if(miss.equals(INICI_RECON)){
+                            xarxa.enviar(RECON);
+                            estat = ESTAT_FINAL;
+                            appCV.signalAll();
+                          
+                        }
+                          break;
+                
+                    }
+                    
+                    case ESTAT_REB_INICI:  {
+                     if(miss.equals(RECON)){
+                     estat = ESTAT_FINAL;
+                     appCV.signalAll();
+                        }
+                    break;
+                
+                    }
+                
+                
+                }
+            
+            
+            
+            
+            }
             
             
             
@@ -90,8 +139,7 @@ public class TSocketCanviEstats1 extends TSocketCanviEstats{
             
             
             
-            
-        }  finally {
+         finally {
             mon.unlock();
         }
     }
